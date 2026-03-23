@@ -1,0 +1,1329 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>⛏️ AHT Mining — Testnet</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config={darkMode:'class',theme:{extend:{
+  fontFamily:{sans:['Inter','sans-serif'],mono:['JetBrains Mono','monospace']},
+  colors:{
+    aht:{300:'#f0abfc',400:'#e879f9',500:'#d946ef',600:'#c026d3',700:'#a21caf',800:'#86198f',900:'#701a75'},
+    gold:{300:'#fcd34d',400:'#fbbf24',500:'#f59e0b',600:'#d97706'}
+  }
+}}}
+</script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;background:#030712;overflow-x:hidden}
+.mono{font-family:'JetBrains Mono',monospace}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:#d946ef33;border-radius:2px}
+.glass{background:rgba(255,255,255,0.04);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.07)}
+.glass2{background:rgba(217,70,239,0.06);backdrop-filter:blur(20px);border:1px solid rgba(217,70,239,0.18)}
+@keyframes up{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.fu{animation:up .4s cubic-bezier(0.16,1,0.3,1) forwards}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes glow2{0%,100%{box-shadow:0 0 30px rgba(217,70,239,0.4),0 0 60px rgba(217,70,239,0.2)}50%{box-shadow:0 0 60px rgba(217,70,239,0.7),0 0 100px rgba(217,70,239,0.35)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes pulse3{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(0.97)}}
+@keyframes mineSwing{0%,100%{transform:rotate(-12deg) scale(1)}50%{transform:rotate(12deg) scale(1.1)}}
+@keyframes ripple{0%{transform:scale(1);opacity:.6}100%{transform:scale(2.5);opacity:0}}
+@keyframes countUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes sh{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.sk{background:linear-gradient(90deg,#1a0a2e 25%,#2a1045 50%,#1a0a2e 75%);background-size:400px 100%;animation:sh 1.4s infinite;border-radius:10px}
+@keyframes particles{0%{transform:translateY(100vh) rotate(0)}100%{transform:translateY(-10vh) rotate(720deg)}}
+.machine-wrap{background:linear-gradient(135deg,#130826 0%,#1e0d38 50%,#0d0520 100%);border:1px solid rgba(217,70,239,0.25);border-radius:28px;position:relative;overflow:hidden}
+.machine-active{border-color:rgba(217,70,239,0.6)!important;box-shadow:0 0 0 1px rgba(217,70,239,0.3),0 20px 60px rgba(217,70,239,0.25),0 0 100px rgba(217,70,239,0.1)}
+.progress-track{background:rgba(255,255,255,0.06);border-radius:999px;overflow:hidden;position:relative}
+.progress-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,#a21caf,#d946ef,#f0abfc,#d946ef);background-size:200% 100%;animation:sh 2s linear infinite;transition:width 1s linear}
+.btn-prime{background:linear-gradient(135deg,#701a75,#a21caf,#d946ef);box-shadow:0 4px 30px rgba(217,70,239,0.45);transition:all .2s;font-weight:800}
+.btn-prime:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 40px rgba(217,70,239,0.6)}
+.btn-prime:active:not(:disabled){transform:translateY(0)}
+.btn-prime:disabled{opacity:0.55;cursor:not-allowed;transform:none!important}
+.btn-claim{background:linear-gradient(135deg,#92400e,#b45309,#f59e0b);box-shadow:0 4px 30px rgba(245,158,11,0.4);transition:all .2s;font-weight:800}
+.btn-claim:hover:not(:disabled){transform:translateY(-2px);box-shadow:0 8px 40px rgba(245,158,11,0.55)}
+.btn-claim:disabled{opacity:0.55;cursor:not-allowed;transform:none!important}
+.nav-btn{transition:all .2s;border-radius:14px;cursor:pointer;padding:8px 4px;flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;border:1px solid transparent}
+.nav-btn:hover{background:rgba(217,70,239,0.08)}
+.nav-btn.active{background:rgba(217,70,239,0.15);border-color:rgba(217,70,239,0.35)}
+.stat-tile{background:linear-gradient(135deg,rgba(217,70,239,0.09),rgba(168,28,175,0.04));border:1px solid rgba(217,70,239,0.14);border-radius:18px;padding:18px;transition:all .2s}
+.stat-tile:hover{border-color:rgba(217,70,239,0.3);transform:translateY(-1px)}
+.badge-net{background:linear-gradient(135deg,#1a0a2e,#2d1052);border:1px solid rgba(217,70,239,0.45);color:#f0abfc;font-size:9px;font-weight:800;padding:3px 10px;border-radius:999px;letter-spacing:.08em;text-transform:uppercase}
+.rank1{background:linear-gradient(135deg,rgba(251,191,36,.13),rgba(245,158,11,.05));border-color:rgba(251,191,36,.35)!important}
+.rank2{background:linear-gradient(135deg,rgba(156,163,175,.09),rgba(107,114,128,.04));border-color:rgba(156,163,175,.25)!important}
+.rank3{background:linear-gradient(135deg,rgba(180,83,9,.12),rgba(120,53,15,.04));border-color:rgba(180,83,9,.28)!important}
+.toast-wrap{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none}
+.toast-item{background:rgba(217,70,239,0.92);backdrop-filter:blur(12px);color:white;padding:11px 22px;border-radius:14px;font-size:13px;font-weight:600;border:1px solid rgba(217,70,239,0.6);box-shadow:0 8px 32px rgba(217,70,239,0.35);animation:up .3s ease;white-space:nowrap}
+.toast-gold{background:rgba(245,158,11,0.9);border-color:rgba(245,158,11,0.6);box-shadow:0 8px 32px rgba(245,158,11,0.35)}
+.ripple-ring{position:absolute;border-radius:50%;border:2px solid rgba(217,70,239,0.5);animation:ripple 1.8s ease-out infinite}
+input{outline:none;background:transparent}
+</style>
+</head>
+<body class="bg-[#030712] text-slate-200 min-h-screen">
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo} = React;
+
+// ══════════════════════════
+// FIREBASE
+// ══════════════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyB3lYDIr8ElAWk-jwnOWxubtVS-TeSSyOg",
+  authDomain:"uyguy-ab047.firebaseapp.com",
+  projectId:"uyguy-ab047",
+  storageBucket:"uyguy-ab047.firebasestorage.app",
+  messagingSenderId:"297739792713",
+  appId:"1:297739792713:web:72af3ba75fabcacb3caa98"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+
+// ══════════════════════════
+// MINING CONFIG
+// ══════════════════════════
+const CFG={
+  SESSION_MS: 8*60*60*1000,    // 8h session length
+  COOLDOWN_MS: 24*60*60*1000,  // 24h between sessions
+  AHT_PER_HOUR: 12.5,          // 100 AHT / 8h = 12.5/hr
+  REF_PCT: 10,                  // 10% commission
+  TG_BONUS: 500,                // Telegram join bonus
+  TG_LINK: 'https://t.me/abedin_hard_team',
+  NET: 'AHT Testnet',
+  VER: 'v0.2.0',
+};
+// AHT per ms
+const AHT_PER_MS = (CFG.AHT_PER_HOUR * 8) / CFG.SESSION_MS;
+
+// ══════════════════════════
+// FIRESTORE HELPERS
+// ══════════════════════════
+const uRef = uid => db.collection('aht_users').doc(uid);
+
+async function dbCreateUser(uid, tgData, tonAddr, name){
+  const snap = await uRef(uid).get();
+  if(snap.exists) return snap.data();
+  const walletAddr = `AHT${uid.slice(0,8).toUpperCase()}`;
+  const refCode    = `REF${uid.slice(0,6).toUpperCase()}`;
+  const data = {
+    uid,
+    tonAddr: tonAddr||'',
+    displayName: name||tgData?.first_name||'Miner',
+    tgId: tgData?.id||null,
+    tgUsername: tgData?.username||null,
+    tgFirstName: tgData?.first_name||null,
+    tgLastName: tgData?.last_name||null,
+    tgPhotoUrl: tgData?.photo_url||null,
+    tgIsPremium: tgData?.is_premium||false,
+    walletAddr, refCode,
+    ahtBalance: 0, totalMined: 0, sessions: 0,
+    isActive: false, miningStart: null, miningEnd: null,
+    lastClaimed: null, lastClaimAmt: 0,
+    totalClaimed: 0, claimCount: 0,
+    refBy: null, refCount: 0, refEarned: 0,
+    tgJoined: false, tgBonus: 0,
+    joinedAt: Date.now(), network: CFG.NET,
+  };
+  await uRef(uid).set(data);
+  return data;
+}
+
+async function dbGetUser(uid){
+  try{
+    const s=await uRef(uid).get();
+    return s.exists?s.data():null;
+  }catch(e){console.error('dbGetUser',e);return null;}
+}
+
+async function dbStartMining(uid){
+  const now=Date.now();
+  await uRef(uid).update({
+    isActive:true,
+    miningStart:now,
+    miningEnd:now+CFG.SESSION_MS,
+  });
+}
+
+// Claim whatever has been mined so far (partial or full)
+async function dbClaim(uid, amount, isFull, referrerUid){
+  if(amount<=0)return;
+  const now=Date.now();
+  const upd={
+    ahtBalance: firebase.firestore.FieldValue.increment(amount),
+    totalMined: firebase.firestore.FieldValue.increment(amount),
+    totalClaimed: firebase.firestore.FieldValue.increment(amount),
+    claimCount: firebase.firestore.FieldValue.increment(1),
+    lastClaimed: now,
+    lastClaimAmt: amount,
+  };
+  if(isFull){
+    // Session শেষ — mining বন্ধ, cooldown শুরু, 0 থেকে restart
+    upd.isActive=false;
+    upd.miningStart=null;
+    upd.miningEnd=null;
+    upd.sessions=firebase.firestore.FieldValue.increment(1);
+  } else {
+    // Partial claim — mining চলতে থাকবে, miningStart রিসেট করো 0 থেকে শুরুর জন্য
+    upd.miningStart=now;
+    upd.miningEnd=now+CFG.SESSION_MS;
+  }
+  await uRef(uid).update(upd);
+
+  // Referral commission 10%
+  if(referrerUid && amount>0){
+    const commission = parseFloat((amount * CFG.REF_PCT / 100).toFixed(4));
+    await uRef(referrerUid).update({
+      ahtBalance: firebase.firestore.FieldValue.increment(commission),
+      totalMined: firebase.firestore.FieldValue.increment(commission),
+      refEarned: firebase.firestore.FieldValue.increment(commission),
+    }).catch(()=>{});
+  }
+}
+
+async function dbApplyRef(uid, code){
+  if(!code)return false;
+  code=code.trim().toUpperCase();
+  const snap=await db.collection('aht_users').where('refCode','==',code).limit(1).get();
+  if(snap.empty||snap.docs[0].id===uid)return false;
+  const refUid=snap.docs[0].id;
+  // নতুন user পাবে 50 AHT bonus
+  await uRef(uid).update({
+    refBy:refUid,
+    ahtBalance:firebase.firestore.FieldValue.increment(50),
+    totalMined:firebase.firestore.FieldValue.increment(50),
+    refBonus:50,
+  });
+  await uRef(refUid).update({refCount:firebase.firestore.FieldValue.increment(1)});
+  return refUid;
+}
+
+async function dbTGBonus(uid){
+  await uRef(uid).update({
+    tgJoined:true,
+    tgBonus:CFG.TG_BONUS,
+    ahtBalance:firebase.firestore.FieldValue.increment(CFG.TG_BONUS),
+    totalMined:firebase.firestore.FieldValue.increment(CFG.TG_BONUS),
+  });
+}
+
+// ══════════════════════════
+// COUPON SYSTEM
+// ══════════════════════════
+const COUPONS={
+  'ABEDIN':{bonus:10000,label:'Special Admin Coupon'},
+};
+
+async function dbRedeemCoupon(uid, code){
+  code=code.trim().toUpperCase();
+  const coupon=COUPONS[code];
+  if(!coupon)return{ok:false,msg:'❌ Invalid coupon code!'};
+  // Check already used
+  const snap=await uRef(uid).get();
+  const data=snap.data()||{};
+  const usedCoupons=data.usedCoupons||[];
+  if(usedCoupons.includes(code))return{ok:false,msg:'⚠️ এই coupon আগেই ব্যবহার করা হয়েছে!'};
+  await uRef(uid).update({
+    ahtBalance:firebase.firestore.FieldValue.increment(coupon.bonus),
+    totalMined:firebase.firestore.FieldValue.increment(coupon.bonus),
+    usedCoupons:firebase.firestore.FieldValue.arrayUnion(code),
+  });
+  return{ok:true,msg:`🎉 Coupon redeemed! +${coupon.bonus.toLocaleString()} AHT bonus!`,bonus:coupon.bonus};
+}
+
+async function dbLeaderboard(){
+  const s=await db.collection('aht_users').orderBy('totalMined','desc').limit(20).get();
+  return s.docs.map(d=>d.data());
+}
+
+// ══════════════════════════
+// UTILS
+// ══════════════════════════
+const fmt=(n,d=2)=>{
+  if(!n&&n!==0)return'0';n=parseFloat(n);
+  if(n>=1e9)return(n/1e9).toFixed(d)+'B';
+  if(n>=1e6)return(n/1e6).toFixed(d)+'M';
+  if(n>=1e3)return(n/1e3).toFixed(d)+'K';
+  return n.toFixed(d);
+};
+const fmtTime=ms=>{
+  if(ms<=0)return'00:00:00';
+  const h=Math.floor(ms/3600000),m=Math.floor((ms%3600000)/60000),s=Math.floor((ms%60000)/1000);
+  return`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+};
+const shortA=(a,s=8,e=6)=>a?`${a.slice(0,s)}...${a.slice(-e)}`:'—';
+const cp=t=>{try{navigator.clipboard.writeText(t);}catch{}};
+
+// Compute current earned from miningStart
+function computeEarned(miningStart, miningEnd, now){
+  if(!miningStart)return 0;
+  const elapsed=Math.min(now,miningEnd||now)-miningStart;
+  if(elapsed<=0)return 0;
+  return parseFloat((elapsed*AHT_PER_MS).toFixed(4));
+}
+
+// ══════════════════════════
+// TOAST SYSTEM
+// ══════════════════════════
+let toastId=0;
+function useToast(){
+  const [toasts,setToasts]=useState([]);
+  const push=useCallback((msg,gold=false)=>{
+    const id=++toastId;
+    setToasts(p=>[...p,{id,msg,gold}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3200);
+  },[]);
+  return{toasts,push};
+}
+function ToastLayer({toasts}){
+  return(
+    <div className="toast-wrap">
+      {toasts.map(t=><div key={t.id} className={`toast-item ${t.gold?'toast-gold':''}`}>{t.msg}</div>)}
+    </div>
+  );
+}
+
+// ══════════════════════════
+// PARTICLE BG
+// ══════════════════════════
+function ParticleBG(){
+  return(
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+      {[...Array(18)].map((_,i)=>(
+        <div key={i} style={{
+          position:'absolute',
+          width:`${Math.random()*3+1}px`,height:`${Math.random()*3+1}px`,
+          borderRadius:'50%',background:`rgba(217,70,239,${Math.random()*0.4+0.1})`,
+          left:`${Math.random()*100}%`,
+          animation:`particles ${Math.random()*20+15}s linear ${Math.random()*10}s infinite`,
+          opacity:Math.random()*0.5+0.2,
+        }}/>
+      ))}
+      <div style={{position:'absolute',top:'15%',left:'10%',width:'400px',height:'400px',borderRadius:'50%',background:'radial-gradient(circle,rgba(217,70,239,0.08),transparent 70%)',filter:'blur(40px)'}}/>
+      <div style={{position:'absolute',bottom:'20%',right:'5%',width:'300px',height:'300px',borderRadius:'50%',background:'radial-gradient(circle,rgba(139,92,246,0.07),transparent 70%)',filter:'blur(40px)'}}/>
+    </div>
+  );
+}
+
+// ══════════════════════════
+// AUTH PAGE
+// ══════════════════════════
+function AuthPage({onAuth}){
+  const [step,setStep]=useState('home');
+  const [tonAddr,setTonAddr]=useState('');
+  const [pass,setPass]=useState('');
+  const [name,setName]=useState('');
+  const [refCode,setRefCode]=useState('');
+  const [loading,setLoading]=useState(false);
+  const [err,setErr]=useState('');
+  const [createdUser,setCreatedUser]=useState(null);
+
+  const toEmail=addr=>`${addr.replace(/[^a-zA-Z0-9]/g,'').slice(0,18).toLowerCase()}@aht.mine`;
+
+  const signup=async()=>{
+    if(!tonAddr.trim()){setErr('TON address দিন');return;}
+    if(pass.length<6){setErr('Password কমপক্ষে 6 character');return;}
+    setLoading(true);setErr('');
+    try{
+      const email=toEmail(tonAddr.trim());
+      const c=await auth.createUserWithEmailAndPassword(email,pass);
+      await c.user.updateProfile({displayName:name||shortA(tonAddr)});
+      const data=await dbCreateUser(c.user.uid,tonAddr.trim(),name||shortA(tonAddr));
+      setCreatedUser({uid:c.user.uid,email,data});
+      setStep('ref');
+    }catch(e){
+      const m={'auth/email-already-in-use':'এই TON address এ account আছে। Sign In করুন।'};
+      setErr(m[e.code]||e.message);
+    }
+    setLoading(false);
+  };
+
+  const signin=async()=>{
+    if(!tonAddr.trim()||!pass){setErr('TON address ও password দিন');return;}
+    setLoading(true);setErr('');
+    try{
+      const email=toEmail(tonAddr.trim());
+      const c=await auth.signInWithEmailAndPassword(email,pass);
+      onAuth(c.user);
+    }catch(e){
+      const m={'auth/user-not-found':'Account নেই। Sign Up করুন।','auth/wrong-password':'Password ভুল।','auth/invalid-credential':'TON address বা password ভুল।'};
+      setErr(m[e.code]||e.message);
+    }
+    setLoading(false);
+  };
+
+  const finishRef=async()=>{
+    let gotBonus=false;
+    if(refCode.trim()&&createdUser){
+      const result=await dbApplyRef(createdUser.uid,refCode.trim());
+      if(result) gotBonus=true;
+    }
+    onAuth({uid:createdUser.uid,email:createdUser.email,displayName:name||shortA(tonAddr)}, gotBonus);
+  };
+
+  const inputCls="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-3.5 text-sm text-slate-200 placeholder-slate-600 focus:border-aht-500 focus:bg-aht-500/5 transition-all";
+
+  return(
+    <div className="min-h-screen flex items-center justify-center px-4 py-8 relative z-10">
+      {step==='home'&&(
+        <div className="w-full max-w-sm text-center space-y-8 fu">
+          <div>
+            <div className="w-28 h-28 mx-auto mb-5 rounded-[2rem] flex items-center justify-center text-6xl select-none"
+              style={{background:'linear-gradient(135deg,#701a75,#a21caf,#d946ef)',boxShadow:'0 0 80px rgba(217,70,239,0.6)',animation:'float 3s ease-in-out infinite'}}>
+              ⛏️
+            </div>
+            <h1 className="text-5xl font-black text-white tracking-tight">AHT Mining</h1>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <span className="badge-net">{CFG.NET}</span>
+              <span className="badge-net" style={{background:'linear-gradient(135deg,#1a1a0a,#3d3d00)',borderColor:'rgba(245,158,11,0.45)',color:'#fcd34d'}}>TESTNET {CFG.VER}</span>
+            </div>
+            <p className="text-slate-400 mt-4">Mine AHT Points • Future $AHT Token</p>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            {[['⛏️','Mine Anytime','Claim instantly'],['💰','Earn AHT','Real-time mining'],['🚀','$AHT Token','Mainnet airdrop']].map(([ic,t,s])=>(
+              <div key={t} className="glass2 rounded-2xl p-3 text-center">
+                <div className="text-3xl mb-1">{ic}</div>
+                <p className="text-xs font-bold text-white">{t}</p>
+                <p className="text-xs text-slate-600 mt-0.5">{s}</p>
+              </div>
+            ))}
+          </div>
+          <div className="space-y-3">
+            <button onClick={()=>setStep('signup')} className="btn-prime w-full text-white py-4 rounded-2xl text-base flex items-center justify-center gap-2">
+              ✨ Start Mining — Sign Up
+            </button>
+            <button onClick={()=>setStep('signin')} className="w-full glass border border-white/10 hover:border-aht-500/40 text-slate-300 py-3.5 rounded-2xl text-sm font-semibold transition-all">
+              🔑 Already Mining — Sign In
+            </button>
+          </div>
+          <p className="text-xs text-slate-700">Telegram TON wallet address দিয়ে signup করুন</p>
+        </div>
+      )}
+
+      {(step==='signup'||step==='signin')&&(
+        <div className="w-full max-w-sm fu">
+          <div className="glass rounded-3xl overflow-hidden border border-white/10">
+            <div className="px-6 py-5" style={{background:'linear-gradient(135deg,rgba(217,70,239,0.18),rgba(168,28,175,0.12))'}}>
+              <div className="flex items-center gap-3 mb-1">
+                <span className="text-3xl">{step==='signup'?'✨':'🔑'}</span>
+                <div>
+                  <h2 className="text-xl font-black text-white">{step==='signup'?'Create Account':'Sign In'}</h2>
+                  <p className="text-xs text-aht-300">AHT Mining Testnet</p>
+                </div>
+              </div>
+            </div>
+            <div className="px-6 py-6 space-y-4" style={{background:'rgba(3,7,18,0.85)'}}>
+              {step==='signup'&&(
+                <input value={name} onChange={e=>setName(e.target.value)} placeholder="Miner name (optional)" className={inputCls}/>
+              )}
+              <div>
+                <input value={tonAddr} onChange={e=>setTonAddr(e.target.value)}
+                  placeholder="TON Address (EQ...)"
+                  className={`${inputCls} mono`}/>
+                {step==='signup'&&<p className="text-xs text-slate-600 mt-1.5 ml-1">Telegram → Wallet → TON address</p>}
+              </div>
+              <input value={pass} onChange={e=>setPass(e.target.value)} type="password"
+                placeholder={step==='signup'?'Password (min 6 chars)':'Password'}
+                onKeyDown={e=>e.key==='Enter'&&(step==='signup'?signup():signin())}
+                className={inputCls}/>
+              {err&&<div className="bg-red-500/10 border border-red-500/25 rounded-xl p-3 text-xs text-red-300 flex gap-2"><span>⚠️</span><span>{err}</span></div>}
+              <button onClick={step==='signup'?signup:signin} disabled={loading}
+                className="btn-prime w-full text-white py-4 rounded-2xl text-base flex items-center justify-center gap-2 disabled:opacity-60">
+                {loading?<><span className="animate-spin inline-block">⏳</span>Loading...</>:step==='signup'?'🚀 Create Miner Account':'⛏️ Start Mining'}
+              </button>
+              <div className="flex gap-2">
+                <button onClick={()=>{setStep(step==='signup'?'signin':'signup');setErr('');}} className="flex-1 text-xs text-slate-500 hover:text-aht-400 py-2 transition-colors">
+                  {step==='signup'?'Have account? Sign In →':'No account? Sign Up →'}
+                </button>
+                <button onClick={()=>{setStep('home');setErr('');}} className="text-xs text-slate-700 hover:text-slate-500 py-2 transition-colors">← Back</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {step==='ref'&&(
+        <div className="w-full max-w-sm fu">
+          <div className="glass rounded-3xl overflow-hidden border border-white/10 text-center">
+            <div className="px-6 py-6" style={{background:'linear-gradient(135deg,rgba(217,70,239,0.18),rgba(168,28,175,0.1))'}}>
+              <div className="text-6xl mb-3" style={{animation:'float 2s ease-in-out infinite'}}>🎉</div>
+              <h2 className="text-2xl font-black text-white">Welcome, Miner!</h2>
+              <p className="text-aht-300 text-sm mt-1">Account created successfully</p>
+            </div>
+            <div className="px-6 py-6 space-y-4" style={{background:'rgba(3,7,18,0.85)'}}>
+              <div className="stat-tile text-left">
+                <p className="text-xs text-slate-500 mb-1.5">🏦 Your Testnet Wallet</p>
+                <p className="mono text-aht-300 font-bold text-lg">{createdUser?.data?.walletAddr}</p>
+                <p className="text-xs text-slate-600 mt-1">Bound to: {shortA(tonAddr,14,6)}</p>
+              </div>
+              <div>
+                <label className="text-xs text-slate-500 font-medium block mb-1.5">
+                  🎁 Referral Code <span className="text-slate-600">(optional)</span>
+                </label>
+                <div className="relative">
+                  <input value={refCode} onChange={e=>setRefCode(e.target.value.toUpperCase())}
+                    placeholder="REF123456"
+                    className={`${inputCls} mono uppercase`}/>
+                </div>
+                <div className="mt-2 flex items-center gap-1.5 px-3 py-2 rounded-xl" style={{background:'rgba(245,158,11,0.08)',border:'1px solid rgba(245,158,11,0.2)'}}>
+                  <span className="text-sm">💰</span>
+                  <p className="text-xs text-gold-400 font-semibold">Referral code দিলে তুমি <span className="font-black text-gold-300">+50 AHT</span> bonus পাবে!</p>
+                </div>
+              </div>
+              <button onClick={finishRef} className="btn-prime w-full text-white py-4 rounded-2xl text-lg flex items-center justify-center gap-2">
+                ⛏️ Start Mining Now!
+              </button>
+              <button onClick={()=>onAuth({uid:createdUser.uid,email:createdUser.email,displayName:name||shortA(tonAddr)})} className="w-full text-xs text-slate-600 hover:text-slate-400 py-1 transition-colors">
+                Skip (Refer code ছাড়া) →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ══════════════════════════
+// MINING MACHINE COMPONENT
+// ══════════════════════════
+function MiningMachine({userData,user,refererUid,onRefresh,push}){
+  const [now,setNow]=useState(Date.now());
+  const [claiming,setClaiming]=useState(false);
+  const [starting,setStarting]=useState(false);
+  const [lastClaimDisplay,setLastClaimDisplay]=useState(null);
+
+  useEffect(()=>{
+    const iv=setInterval(()=>setNow(Date.now()),500);
+    return()=>clearInterval(iv);
+  },[]);
+
+  if(!userData)return <div className="sk h-64 w-full"/>;
+
+  const isActive = userData.isActive && userData.miningEnd && now < userData.miningEnd;
+  const isExpired = userData.isActive && userData.miningEnd && now >= userData.miningEnd;
+  // Cooldown শুধু full claim (session শেষ) এর পর, partial claim এ নয়
+  const cooldownLeft = (!userData.isActive && userData.lastClaimed) ? Math.max(0, CFG.COOLDOWN_MS-(now-userData.lastClaimed)) : 0;
+  const canStart = !userData.isActive && cooldownLeft===0;
+
+  // Real-time earned
+  const earned = isActive
+    ? computeEarned(userData.miningStart, userData.miningEnd, now)
+    : isExpired
+      ? computeEarned(userData.miningStart, userData.miningEnd, userData.miningEnd)
+      : 0;
+
+  const timeLeft = isActive ? Math.max(0, userData.miningEnd - now) : 0;
+  const progress = isActive
+    ? Math.min(100, ((now - userData.miningStart) / CFG.SESSION_MS) * 100)
+    : isExpired ? 100 : 0;
+
+  // Mining rate per second display
+  const ratePerSec = (AHT_PER_MS * 1000).toFixed(4);
+
+  const doStart=async()=>{
+    setStarting(true);
+    try{
+      await dbStartMining(user.uid);
+      await onRefresh();
+      push('⛏️ Mining started! Claim anytime.');
+    }catch(e){push('Error: '+e.message);}
+    setStarting(false);
+  };
+
+  const doClaim=async(partial=false)=>{
+    const amount=parseFloat(earned.toFixed(4));
+    if(amount<=0){push('⚠️ Mining সবে শুরু হয়েছে!');return;}
+    setClaiming(true);
+    try{
+      // isExpired মানে session শেষ (full claim), partial=true মানে চলতে চলতে claim
+      const isFull = isExpired;
+      await dbClaim(user.uid, amount, isFull, refererUid);
+      setLastClaimDisplay(amount);
+      await onRefresh();
+      push(`🎁 Claimed ${fmt(amount,4)} AHT!`,true);
+      setTimeout(()=>setLastClaimDisplay(null),3000);
+    }catch(e){push('Claim error: '+e.message);}
+    setClaiming(false);
+  };
+
+  return(
+    <div className={`machine-wrap transition-all ${isActive||isExpired?'machine-active':''}`}>
+      {/* Glow top */}
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-full opacity-60" style={{background:isActive?'linear-gradient(90deg,transparent,#d946ef,transparent)':isExpired?'linear-gradient(90deg,transparent,#f59e0b,transparent)':'transparent',animation:isActive?'sh 2s linear infinite':'none',backgroundSize:'200% 100%'}}/>
+
+      {/* Ripple rings when active */}
+      {isActive&&[...Array(3)].map((_,i)=>(
+        <div key={i} className="ripple-ring" style={{width:'180px',height:'180px',top:'50%',left:'50%',marginTop:'-90px',marginLeft:'-90px',animationDelay:`${i*0.6}s`}}/>
+      ))}
+
+      <div className="relative z-10 p-6 space-y-5">
+        {/* Status + icon */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="text-5xl select-none"
+              style={{animation:isActive?'mineSwing 0.7s ease-in-out infinite':isExpired?'float 2s ease-in-out infinite':'float 4s ease-in-out infinite'}}>
+              ⛏️
+            </div>
+            <div>
+              <p className="font-black text-xl text-white">
+                {isActive?'Mining Active':isExpired?'Ready to Claim!':canStart?'Ready to Mine':'Cooldown'}
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isActive?'bg-green-400':isExpired?'bg-gold-400':'bg-slate-600'}`}
+                  style={isActive?{animation:'pulse3 1s ease-in-out infinite'}:{}}/>
+                <p className="text-xs text-slate-400">
+                  {isActive?`Mining at ${ratePerSec} AHT/sec`:
+                   isExpired?'Session complete — claim your AHT!':
+                   canStart?'Start a new mining session':
+                   `Next session in ${fmtTime(cooldownLeft)}`}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-slate-500">Rate</p>
+            <p className="text-aht-300 font-bold text-sm">{fmt(AHT_PER_MS*3600000,1)}<span className="text-xs text-slate-500">/hr</span></p>
+          </div>
+        </div>
+
+        {/* Progress bar */}
+        {(isActive||isExpired)&&(
+          <div className="space-y-2">
+            <div className="flex justify-between text-xs text-slate-400">
+              <span>Session Progress</span>
+              <span className="font-bold text-aht-300">{progress.toFixed(1)}%</span>
+            </div>
+            <div className="progress-track h-3">
+              <div className="progress-fill" style={{width:`${progress}%`}}/>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-slate-500">{isActive?`${fmtTime(timeLeft)} left`:'Complete ✅'}</span>
+              <span className="text-gold-400 font-bold">{fmt(earned,4)} AHT earned</span>
+            </div>
+          </div>
+        )}
+
+        {/* Big earned display */}
+        {(isActive||isExpired)&&(
+          <div className="text-center py-3">
+            {lastClaimDisplay&&(
+              <div className="text-green-400 text-sm font-bold mb-1" style={{animation:'countUp .4s ease'}}>
+                ✅ Just claimed {fmt(lastClaimDisplay,4)} AHT!
+              </div>
+            )}
+            <p className="text-xs text-slate-500 mb-1">Claimable Now</p>
+            <p className="text-5xl font-black mono" style={{background:'linear-gradient(135deg,#f0abfc,#d946ef,#fbbf24)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+              {fmt(earned,4)}
+            </p>
+            <p className="text-aht-400 font-bold text-lg mt-0.5">AHT</p>
+            <p className="text-xs text-slate-600 mt-1">
+              {isActive?`+${ratePerSec} AHT per second — Claim anytime!`:'Full session complete'}
+            </p>
+          </div>
+        )}
+
+        {/* Action buttons */}
+        {isActive&&(
+          <button onClick={()=>doClaim(true)} disabled={claiming||earned<0.0001}
+            className="btn-claim w-full text-white py-4 rounded-2xl text-lg flex items-center justify-center gap-2 disabled:opacity-60">
+            {claiming?<><span className="animate-spin inline-block">⏳</span>Claiming...</>:<>💰 Claim {fmt(earned,4)} AHT Now</>}
+          </button>
+        )}
+        {isExpired&&(
+          <button onClick={()=>doClaim(false)} disabled={claiming}
+            className="btn-claim w-full text-white py-4 rounded-2xl text-xl flex items-center justify-center gap-2 disabled:opacity-60">
+            {claiming?<><span className="animate-spin inline-block">⏳</span>Claiming...</>:<>🎁 Claim Full {fmt(earned,4)} AHT</>}
+          </button>
+        )}
+        {canStart&&!isActive&&!isExpired&&(
+          <button onClick={doStart} disabled={starting}
+            className="btn-prime w-full text-white py-4 rounded-2xl text-xl flex items-center justify-center gap-2 disabled:opacity-60">
+            {starting?<><span className="animate-spin inline-block">⏳</span>Starting...</>:<>⛏️ Start Mining Session</>}
+          </button>
+        )}
+        {!canStart&&!isActive&&!isExpired&&(
+          <div className="glass2 rounded-2xl py-4 text-center border border-aht-500/20">
+            <p className="text-slate-400 font-bold">⏳ Next Session Available In</p>
+            <p className="text-3xl font-black mono text-aht-400 mt-1">{fmtTime(cooldownLeft)}</p>
+          </div>
+        )}
+
+        {/* Info pills */}
+        <div className="flex gap-2 flex-wrap">
+          <div className="glass px-3 py-1.5 rounded-full text-xs text-slate-400 border border-white/8 flex items-center gap-1.5">
+            <span>⏱️</span> Session: 8h
+          </div>
+          <div className="glass px-3 py-1.5 rounded-full text-xs text-slate-400 border border-white/8 flex items-center gap-1.5">
+            <span>💰</span> 100 AHT/session
+          </div>
+          <div className="glass px-3 py-1.5 rounded-full text-xs text-slate-400 border border-white/8 flex items-center gap-1.5">
+            <span>🔄</span> Claim anytime
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════
+// HOME PAGE
+// ══════════════════════════
+function HomePage({userData,user,refererUid,onRefresh,push}){
+  const [tgLoading,setTgLoading]=useState(false);
+
+  const doTG=async()=>{
+    if(userData?.tgJoined){push('⚠️ Already claimed TG bonus!');return;}
+    window.open(CFG.TG_LINK,'_blank');
+    setTgLoading(true);
+    setTimeout(async()=>{
+      try{
+        await dbTGBonus(user.uid);
+        await onRefresh();
+        push(`🎉 +${CFG.TG_BONUS} AHT Telegram bonus claimed!`,true);
+      }catch(e){push('Error: '+e.message);}
+      setTgLoading(false);
+    },3000);
+  };
+
+  if(!userData)return <div className="space-y-4">{[...Array(4)].map((_,i)=><div key={i} className="sk h-20"/>)}</div>;
+  const level=Math.max(1,Math.floor((userData.totalMined||0)/500)+1);
+
+  return(
+    <div className="space-y-4 fu">
+      {/* Greeting */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-slate-500 text-sm">Welcome back,</p>
+          <p className="text-white font-black text-2xl">{userData.displayName} ⛏️</p>
+        </div>
+        <div className="text-right">
+          <span className="badge-net">{CFG.NET}</span>
+          <p className="text-xs text-slate-600 mt-1">Lv.{level} Miner</p>
+        </div>
+      </div>
+
+      {/* Balances */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="stat-tile">
+          <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5">💰 AHT Balance</p>
+          <p className="text-3xl font-black" style={{background:'linear-gradient(135deg,#f0abfc,#d946ef)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>
+            {fmt(userData.ahtBalance||0)}
+          </p>
+          <p className="text-xs text-aht-500 mt-0.5">AHT Points</p>
+        </div>
+        <div className="stat-tile">
+          <p className="text-xs text-slate-500 mb-2 flex items-center gap-1.5">⛏️ Total Mined</p>
+          <p className="text-3xl font-black text-white">{fmt(userData.totalMined||0)}</p>
+          <p className="text-xs text-slate-500 mt-0.5">{userData.sessions||0} sessions • {userData.claimCount||0} claims</p>
+        </div>
+      </div>
+
+      {/* Telegram bonus */}
+      {!userData.tgJoined&&(
+        <button onClick={doTG} disabled={tgLoading}
+          className="w-full rounded-2xl py-4 flex items-center gap-4 px-5 transition-all disabled:opacity-60"
+          style={{background:'linear-gradient(135deg,rgba(0,136,204,0.2),rgba(0,136,204,0.1))',border:'1px solid rgba(0,136,204,0.35)'}}>
+          <div className="w-11 h-11 rounded-xl flex items-center justify-center text-2xl flex-shrink-0" style={{background:'rgba(0,136,204,0.3)'}}>📱</div>
+          <div className="flex-1 text-left">
+            <p className="font-bold text-white">Join Telegram Community</p>
+            <p className="text-xs text-blue-300 mt-0.5">Get +{CFG.TG_BONUS} AHT instant bonus!</p>
+          </div>
+          {tgLoading?<span className="animate-spin text-xl">⏳</span>:<span className="text-blue-300 text-xl">→</span>}
+        </button>
+      )}
+      {userData.tgJoined&&(
+        <div className="w-full rounded-2xl py-3.5 flex items-center gap-4 px-5" style={{background:'rgba(0,136,204,0.08)',border:'1px solid rgba(0,136,204,0.2)'}}>
+          <span className="text-2xl">✅</span>
+          <div>
+            <p className="font-bold text-white text-sm">Telegram Joined</p>
+            <p className="text-xs text-blue-300">+{CFG.TG_BONUS} AHT bonus claimed</p>
+          </div>
+        </div>
+      )}
+
+      {/* Mining Machine */}
+      <MiningMachine userData={userData} user={user} refererUid={refererUid} onRefresh={onRefresh} push={push}/>
+
+      {/* Quick stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          ['👥','Referrals',userData.refCount||0,''],
+          ['💎','Ref Earned',fmt(userData.refEarned||0),'AHT'],
+          ['📊','Level',level,'Miner'],
+        ].map(([ic,l,v,s])=>(
+          <div key={l} className="glass rounded-2xl p-3 text-center border border-white/8">
+            <div className="text-xl mb-1">{ic}</div>
+            <p className="text-white font-black text-lg">{v}</p>
+            <p className="text-xs text-slate-600">{l}{s?' '+s:''}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Airdrop teaser */}
+      <div className="rounded-2xl p-4" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.1),rgba(217,119,6,0.05))',border:'1px solid rgba(245,158,11,0.25)'}}>
+        <div className="flex items-start gap-3">
+          <span className="text-2xl">🚀</span>
+          <div>
+            <p className="font-bold text-gold-400">$AHT Airdrop Coming</p>
+            <p className="text-xs text-slate-400 mt-1">Testnet এ যত বেশি AHT mine করবেন, Mainnet launch এ তত বেশি $AHT token পাবেন।</p>
+            <p className="text-xs text-gold-500 mt-2 font-bold">1 AHT Point = 1 $AHT Token</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════
+// PROFILE PAGE
+// ══════════════════════════
+function ProfilePage({userData,user,push}){
+  const [copied,setCopied]=useState('');
+  const [couponCode,setCouponCode]=useState('');
+  const [couponLoading,setCouponLoading]=useState(false);
+  if(!userData)return <div className="space-y-3">{[...Array(3)].map((_,i)=><div key={i} className="sk h-20"/>)}</div>;
+
+  const doCopy=(text,label)=>{cp(text);setCopied(label);push(`${label} copied! ✅`);setTimeout(()=>setCopied(''),2000);};
+  const level=Math.max(1,Math.floor((userData.totalMined||0)/500)+1);
+  const nextLvlPts=level*500;
+  const pct=Math.min(100,((userData.totalMined||0)%500)/500*100);
+
+  const doRedeemCoupon=async()=>{
+    if(!couponCode.trim()){push('⚠️ Coupon code লিখুন!');return;}
+    setCouponLoading(true);
+    try{
+      const result=await dbRedeemCoupon(user.uid,couponCode);
+      if(result.ok){
+        push(result.msg,true);
+        setCouponCode('');
+        // Refresh userData
+        const d=await dbGetUser(user.uid);
+        // force re-render via parent not available here, toast is enough
+      }else{
+        push(result.msg);
+      }
+    }catch(e){push('Error: '+e.message);}
+    setCouponLoading(false);
+  };
+
+  return(
+    <div className="space-y-4 fu">
+      {/* Profile card */}
+      <div className="glass2 rounded-3xl p-5 text-center border border-aht-500/20">
+        {/* Avatar */}
+        {userData.tgPhotoUrl?(
+          <img src={userData.tgPhotoUrl} className="w-20 h-20 mx-auto mb-3 rounded-full border-2 border-aht-500/50" style={{boxShadow:'0 0 30px rgba(217,70,239,0.3)'}} alt=""/>
+        ):(
+          <div className="w-20 h-20 mx-auto mb-3 rounded-full flex items-center justify-center text-3xl font-black text-white"
+            style={{background:`linear-gradient(135deg,hsl(${(userData.displayName||'M').charCodeAt(0)*7%360},65%,30%),hsl(${(userData.displayName||'M').charCodeAt(0)*7%360},75%,50%))`,boxShadow:`0 0 30px hsla(${(userData.displayName||'M').charCodeAt(0)*7%360},70%,50%,0.3)`}}>
+            {(userData.displayName||'M')[0].toUpperCase()}
+          </div>
+        )}
+        <h2 className="text-2xl font-black text-white">{userData.displayName}</h2>
+        {userData.tgUsername&&<p className="text-aht-400 text-sm mt-0.5">@{userData.tgUsername}</p>}
+        <div className="flex items-center justify-center gap-2 mt-1.5">
+          <p className="text-slate-500 text-xs">Level {level} Miner • {CFG.NET}</p>
+          {userData.tgIsPremium&&<span className="text-xs px-2 py-0.5 rounded-full font-bold" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.2),rgba(217,119,6,0.1))',border:'1px solid rgba(245,158,11,0.35)',color:'#fbbf24'}}>⭐ Premium</span>}
+        </div>
+        {userData.tgId&&(
+          <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-slate-600 bg-white/5 px-3 py-1.5 rounded-full">
+            <span>🆔</span> TG ID: {userData.tgId}
+          </div>
+        )}
+        <div className="mt-4 space-y-1.5">
+          <div className="flex justify-between text-xs text-slate-500"><span>Level {level}</span><span>Level {level+1}</span></div>
+          <div className="progress-track h-2.5"><div className="progress-fill" style={{width:`${pct}%`}}/></div>
+          <p className="text-xs text-slate-600">{(userData.totalMined||0).toFixed(2)} / {nextLvlPts} AHT</p>
+        </div>
+      </div>
+
+      {/* Balances */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="stat-tile text-center">
+          <p className="text-3xl font-black" style={{background:'linear-gradient(135deg,#f0abfc,#d946ef)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent'}}>{fmt(userData.ahtBalance||0,2)}</p>
+          <p className="text-xs text-aht-400 mt-1">AHT Balance</p>
+        </div>
+        <div className="stat-tile text-center">
+          <p className="text-3xl font-black text-white">{fmt(userData.totalMined||0,2)}</p>
+          <p className="text-xs text-slate-500 mt-1">Total Mined</p>
+        </div>
+        <div className="stat-tile text-center">
+          <p className="text-2xl font-black text-gold-400">{userData.claimCount||0}</p>
+          <p className="text-xs text-slate-500 mt-1">Times Claimed</p>
+        </div>
+        <div className="stat-tile text-center">
+          <p className="text-2xl font-black text-green-400">{userData.sessions||0}</p>
+          <p className="text-xs text-slate-500 mt-1">Sessions Done</p>
+        </div>
+      </div>
+
+      {/* Wallet info */}
+      <div className="glass rounded-2xl overflow-hidden border border-white/8">
+        <div className="px-5 py-3 border-b border-white/5 text-sm font-bold text-white" style={{background:'rgba(217,70,239,0.08)'}}>🏦 Wallet Info</div>
+        <div className="divide-y divide-white/5">
+          {[
+            ['Wallet Addr',userData.walletAddr,true],
+            ['TON Address',userData.tonAddr,true],
+            ['Network',CFG.NET,false],
+            ['Joined',userData.joinedAt?new Date(userData.joinedAt).toLocaleDateString():'-',false],
+          ].map(([l,v,c])=>(
+            <div key={l} className="flex items-center justify-between px-5 py-3 gap-4">
+              <span className="text-xs text-slate-500 flex-shrink-0 w-24">{l}</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className={`text-xs text-slate-200 text-right break-all ${c?'mono':''}`}>{String(v||'—')}</span>
+                {c&&v&&<button onClick={()=>doCopy(String(v),l)} className="text-slate-600 hover:text-aht-400 transition-colors text-xs flex-shrink-0">📋</button>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Referral */}
+      <div className="glass2 rounded-2xl p-5 border border-aht-500/20">
+        <p className="font-bold text-white mb-1">👥 Referral Program</p>
+        <p className="text-xs text-slate-400 mb-4">Share your link. Earn <span className="text-aht-300 font-bold">10% commission</span> on every AHT they mine — forever! তারা পাবে <span className="text-gold-400 font-bold">+50 AHT</span> signup bonus।</p>
+        <div className="flex gap-2 mb-3">
+          <div className="flex-1 glass rounded-xl px-4 py-3 mono text-aht-300 font-bold text-center border border-aht-500/30 text-lg">
+            {userData.refCode}
+          </div>
+          <button onClick={()=>doCopy(userData.refCode,'Referral Code')}
+            className="btn-prime text-white px-5 py-3 rounded-xl text-sm flex-shrink-0">
+            {copied==='Referral Code'?'✅':'📋 Copy'}
+          </button>
+        </div>
+        {/* Telegram share button */}
+        <button
+          onClick={()=>{
+            const botLink=`https://t.me/AHTMiningBot/app?startapp=${userData.refCode}`;
+            const msg=`⛏️ AHT Mining এ join করো!\n\nFree AHT mine করো — Future $AHT Token!\n🎁 আমার link দিয়ে join করলে তুমি পাবে +50 AHT bonus!\n\n👇 Click here:\n${botLink}`;
+            if(TG){
+              TG.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(botLink)}&text=${encodeURIComponent(msg)}`);
+            }else{
+              cp(botLink);
+              push('📋 Referral link copied!');
+            }
+          }}
+          className="w-full py-3 rounded-xl text-sm font-bold text-white mb-3 flex items-center justify-center gap-2 transition-all"
+          style={{background:'linear-gradient(135deg,rgba(0,136,204,0.3),rgba(0,136,204,0.15))',border:'1px solid rgba(0,136,204,0.4)'}}>
+          <span>📤</span> {TG?'Telegram এ Share করো':'Referral Link Copy করো'}
+        </button>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            ['👥','Referrals',userData.refCount||0],
+            ['💰','Earned',fmt(userData.refEarned||0,2)+' AHT'],
+            ['📊','Rate','10%'],
+          ].map(([ic,l,v])=>(
+            <div key={l} className="glass rounded-xl p-3 text-center">
+              <div className="text-lg mb-0.5">{ic}</div>
+              <p className="font-bold text-white text-sm">{v}</p>
+              <p className="text-xs text-slate-600">{l}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Coupon */}
+      <div className="rounded-2xl overflow-hidden border" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.08),rgba(217,119,6,0.04))',borderColor:'rgba(245,158,11,0.28)'}}>
+        <div className="px-5 py-3 border-b flex items-center gap-2" style={{borderColor:'rgba(245,158,11,0.18)',background:'rgba(245,158,11,0.07)'}}>
+          <span className="text-xl">🎟️</span>
+          <p className="font-bold text-gold-400">Redeem Coupon</p>
+        </div>
+        <div className="px-5 py-5 space-y-3">
+          <p className="text-xs text-slate-400">Special coupon code থাকলে এখানে দিন — instant AHT bonus পাবেন! প্রতিটি coupon per account একবার ব্যবহার করা যাবে।</p>
+          <div className="flex gap-2">
+            <input
+              value={couponCode}
+              onChange={e=>setCouponCode(e.target.value.toUpperCase())}
+              onKeyDown={e=>e.key==='Enter'&&doRedeemCoupon()}
+              placeholder="COUPON CODE"
+              className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:border-gold-500 focus:bg-gold-500/5 transition-all mono uppercase"
+              style={{outline:'none'}}
+            />
+            <button
+              onClick={doRedeemCoupon}
+              disabled={couponLoading}
+              className="px-5 py-3 rounded-xl text-sm font-black text-white flex-shrink-0 transition-all disabled:opacity-60"
+              style={{background:'linear-gradient(135deg,#92400e,#b45309,#f59e0b)',boxShadow:'0 4px 20px rgba(245,158,11,0.35)'}}>
+              {couponLoading?'⏳':'🎁 Claim'}
+            </button>
+          </div>
+          {/* Show used coupons */}
+          {userData.usedCoupons&&userData.usedCoupons.length>0&&(
+            <div className="flex flex-wrap gap-1.5 mt-1">
+              {userData.usedCoupons.map(c=>(
+                <span key={c} className="text-xs px-2.5 py-1 rounded-full font-bold mono" style={{background:'rgba(245,158,11,0.12)',border:'1px solid rgba(245,158,11,0.25)',color:'#fbbf24'}}>
+                  ✅ {c}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+// ══════════════════════════
+function LeaderboardPage({userData}){
+  const [list,setList]=useState([]);
+  const [loading,setLoading]=useState(true);
+  useEffect(()=>{dbLeaderboard().then(l=>{setList(l);setLoading(false);}).catch(()=>setLoading(false));},[]);
+  const medals=['🥇','🥈','🥉'];
+  const rcls=['rank1','rank2','rank3'];
+
+  return(
+    <div className="space-y-4 fu">
+      <div className="text-center">
+        <h2 className="text-3xl font-black text-white">🏆 Leaderboard</h2>
+        <p className="text-slate-500 text-sm mt-1">Top AHT Miners — Testnet</p>
+      </div>
+      {userData&&(
+        <div className="glass2 rounded-2xl p-4 border border-aht-500/20 flex items-center gap-3">
+          <div className="w-11 h-11 rounded-full flex items-center justify-center font-black text-white text-lg flex-shrink-0"
+            style={{background:'linear-gradient(135deg,#701a75,#d946ef)'}}>{(userData.displayName||'M')[0].toUpperCase()}</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-white truncate">You — {userData.displayName}</p>
+            <p className="text-xs text-aht-300">{fmt(userData.totalMined||0,2)} AHT Mined</p>
+          </div>
+          <div className="text-right">
+            <p className="font-black text-aht-400">{fmt(userData.ahtBalance||0,2)}</p>
+            <p className="text-xs text-slate-500">Balance</p>
+          </div>
+        </div>
+      )}
+      {loading&&<div className="space-y-2">{[...Array(5)].map((_,i)=><div key={i} className="sk h-16"/>)}</div>}
+      {!loading&&list.length===0&&<div className="glass rounded-2xl p-12 text-center border border-white/8"><div className="text-5xl mb-3">🏆</div><p className="text-slate-500">No miners yet — be first!</p></div>}
+      <div className="space-y-2">
+        {list.map((l,i)=>(
+          <div key={l.uid||i} className={`glass rounded-2xl p-4 border border-white/8 flex items-center gap-3 transition-all ${i<3?rcls[i]:''}`}>
+            <div className="w-9 text-center flex-shrink-0">
+              {i<3?<span className="text-2xl">{medals[i]}</span>:<span className="font-black text-slate-500">#{i+1}</span>}
+            </div>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center font-black text-white flex-shrink-0"
+              style={{background:`hsl(${(l.displayName||'M').charCodeAt(0)*7%360},60%,38%)`}}>
+              {(l.displayName||'M')[0].toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-white truncate">{l.displayName||'Miner'}</p>
+              <p className="mono text-xs text-slate-500 truncate">{l.walletAddr}</p>
+            </div>
+            <div className="text-right flex-shrink-0">
+              <p className="font-black text-aht-300 text-sm">{fmt(l.totalMined||0,2)}</p>
+              <p className="text-xs text-slate-500">AHT</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════
+// AIRDROP PAGE
+// ══════════════════════════
+function AirdropPage({userData}){
+  const mined=userData?.totalMined||0;
+  const milestones=[
+    {pts:100,ic:'🏅',label:'Early Miner',desc:'First 100 AHT'},
+    {pts:500,ic:'⭐',label:'Level 2',desc:'Unlock next tier'},
+    {pts:1000,ic:'🎁',label:'+100 AHT Bonus',desc:'Power miner'},
+    {pts:5000,ic:'👑',label:'VIP Status',desc:'Top 1%'},
+    {pts:10000,ic:'💎',label:'Genesis Miner',desc:'Founder badge'},
+  ];
+  return(
+    <div className="space-y-4 fu">
+      <div className="text-center">
+        <h2 className="text-3xl font-black text-white">🚀 Airdrop</h2>
+        <p className="text-slate-500 text-sm mt-1">$AHT Token Distribution Plan</p>
+      </div>
+      <div className="rounded-3xl p-6 text-center" style={{background:'linear-gradient(135deg,rgba(245,158,11,0.14),rgba(217,119,6,0.07))',border:'1px solid rgba(245,158,11,0.28)'}}>
+        <div className="text-6xl mb-3" style={{animation:'float 3s ease-in-out infinite'}}>💰</div>
+        <h3 className="text-2xl font-black text-gold-400">$AHT Token Launch</h3>
+        <p className="text-slate-300 text-sm mt-2 max-w-xs mx-auto">Testnet এ mine করা AHT points Mainnet এ $AHT token এ convert হবে।</p>
+        <div className="mt-4 inline-flex items-center gap-2 glass rounded-2xl px-6 py-3 border border-gold-500/30">
+          <span className="text-2xl">⚖️</span>
+          <div className="text-left">
+            <p className="text-gold-400 font-black text-lg">1 AHT = 1 $AHT</p>
+            <p className="text-xs text-slate-500">Testnet Conversion Rate</p>
+          </div>
+        </div>
+      </div>
+      {userData&&(
+        <div className="glass2 rounded-2xl p-5 border border-aht-500/20">
+          <p className="font-bold text-white mb-4">📸 Your Snapshot</p>
+          <div className="grid grid-cols-2 gap-3">
+            {[['AHT Balance',fmt(userData.ahtBalance||0,2),'Current'],['Total Mined',fmt(userData.totalMined||0,2),'Lifetime'],['Sessions',userData.sessions||0,'Done'],['Referrals',userData.refCount||0,'Invited']].map(([l,v,s])=>(
+              <div key={l} className="glass rounded-xl p-3 text-center">
+                <p className="text-2xl font-black text-white">{v}</p>
+                <p className="text-xs text-slate-500">{l}</p>
+                <p className="text-xs text-aht-400">{s}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="glass rounded-2xl overflow-hidden border border-white/8">
+        <div className="px-5 py-3 border-b border-white/5 font-bold text-white" style={{background:'rgba(217,70,239,0.08)'}}>🎯 Milestones</div>
+        <div className="divide-y divide-white/5">
+          {milestones.map(ms=>{
+            const done=mined>=ms.pts;
+            return(
+              <div key={ms.pts} className={`flex items-center gap-4 px-5 py-4 ${done?'':'opacity-55'}`}>
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl flex-shrink-0 ${done?'':'grayscale'}`}
+                  style={done?{background:'linear-gradient(135deg,#701a75,#d946ef)'}:{background:'rgba(255,255,255,0.05)'}}>
+                  {done?'✅':ms.ic}
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold text-white text-sm">{ms.pts.toLocaleString()} AHT — {ms.label}</p>
+                  <p className="text-xs text-slate-500">{ms.desc}</p>
+                </div>
+                <span className={`text-xs font-bold flex-shrink-0 ${done?'text-green-400':'text-slate-600'}`}>{done?'Done ✅':`${Math.min(mined,ms.pts)}/${ms.pts}`}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+      <div className="glass rounded-2xl p-5 border border-white/8">
+        <p className="font-bold text-white mb-4">📅 Roadmap</p>
+        <div className="space-y-4">
+          {[['✅','Phase 1','Testnet Mining Launch','Active'],['🔄','Phase 2','Community & Referral Growth','Ongoing'],['⏳','Phase 3','Mainnet Preparation','Coming Soon'],['🚀','Phase 4','$AHT Token Launch & Airdrop','TBA']].map(([ic,ph,d,st])=>(
+            <div key={ph} className="flex gap-3">
+              <span className="text-xl flex-shrink-0">{ic}</span>
+              <div>
+                <p className="font-semibold text-white text-sm">{ph}: {d}</p>
+                <p className="text-xs text-slate-500">{st}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ══════════════════════════
+// TELEGRAM HELPERS
+// ══════════════════════════
+const TG = window.Telegram?.WebApp;
+const tgUser = TG?.initDataUnsafe?.user || null;
+const tgStartParam = TG?.initDataUnsafe?.start_param || null;
+
+// Telegram user কে Firebase email হিসেবে map করি
+const tgEmail = id => `tg_${id}@aht.mine`;
+const tgPass  = id => `AHTPASS_${id}_secure`;
+
+async function tgSignInOrCreate(tgData){
+  const email = tgEmail(tgData.id);
+  const pass  = tgPass(tgData.id);
+  try{
+    const c = await auth.signInWithEmailAndPassword(email, pass);
+    // প্রতিবার login এ Telegram data update করো
+    await uRef(c.user.uid).update({
+      tgUsername: tgData.username||null,
+      tgFirstName: tgData.first_name||null,
+      tgLastName: tgData.last_name||null,
+      tgPhotoUrl: tgData.photo_url||null,
+      tgIsPremium: tgData.is_premium||false,
+      displayName: tgData.first_name||(tgData.username?'@'+tgData.username:'Miner'),
+    }).catch(()=>{});
+    return c.user;
+  }catch(e){
+    if(e.code==='auth/user-not-found'||e.code==='auth/invalid-credential'){
+      const c = await auth.createUserWithEmailAndPassword(email, pass);
+      await c.user.updateProfile({displayName: tgData.first_name||'Miner'});
+      await dbCreateUser(c.user.uid, tgData, '', tgData.first_name||(tgData.username?'@'+tgData.username:'Miner'));
+      return c.user;
+    }
+    throw e;
+  }
+}
+
+// ══════════════════════════
+// MAIN APP
+// ══════════════════════════
+function App(){
+  const [authState,setAuthState]=useState('loading');
+  const [user,setUser]=useState(null);
+  const [userData,setUserData]=useState(null);
+  const [refererUid,setRefererUid]=useState(null);
+  const [page,setPage]=useState('home');
+  const {toasts,push}=useToast();
+
+  // Telegram Mini App setup
+  useEffect(()=>{
+    if(TG){
+      TG.ready();
+      TG.expand();
+      TG.setHeaderColor('#030712');
+      TG.setBackgroundColor('#030712');
+    }
+  },[]);
+
+  useEffect(()=>{
+    // Telegram এ খুললে auto login
+    if(tgUser){
+      (async()=>{
+        try{
+          const u = await tgSignInOrCreate(tgUser);
+          setUser(u);
+          let d = await dbGetUser(u.uid);
+          setUserData(d);
+
+          // Start param থেকে referral code handle
+          if(tgStartParam && d && !d.refBy){
+            const refResult = await dbApplyRef(u.uid, tgStartParam);
+            if(refResult){
+              setRefererUid(refResult);
+              d = await dbGetUser(u.uid);
+              setUserData(d);
+              setTimeout(()=>push('🎁 Referral bonus! +50 AHT credited!',true),1000);
+            }
+          }
+          if(d?.refBy) setRefererUid(d.refBy);
+          setAuthState('app');
+        }catch(err){
+          console.error('TG auth error',err);
+          setAuthState('auth'); // fallback
+        }
+      })();
+      return;
+    }
+
+    // Browser এ খুললে normal Firebase auth check
+    const timer=setTimeout(()=>setAuthState(s=>s==='loading'?'auth':s),8000);
+    const unsub=auth.onAuthStateChanged(async u=>{
+      clearTimeout(timer);
+      if(u){
+        setUser(u);
+        const d=await dbGetUser(u.uid);
+        setUserData(d);
+        if(d?.refBy)setRefererUid(d.refBy);
+        setAuthState('app');
+      }else{
+        setUser(null);setUserData(null);setAuthState('auth');
+      }
+    });
+    return()=>{unsub();clearTimeout(timer);};
+  },[]);
+
+  useEffect(()=>{
+    if(!user)return;
+    const iv=setInterval(async()=>{
+      const d=await dbGetUser(user.uid);
+      setUserData(d);
+    },20000);
+    return()=>clearInterval(iv);
+  },[user]);
+
+  const loadUser=useCallback(async()=>{
+    if(!user)return;
+    const d=await dbGetUser(user.uid);
+    setUserData(d);
+    if(d?.refBy&&!refererUid)setRefererUid(d.refBy);
+  },[user,refererUid]);
+
+  const onAuth=async (u, refBonus=false)=>{
+    setUser(u);
+    const d=await dbGetUser(u.uid);
+    setUserData(d);
+    if(d?.refBy)setRefererUid(d.refBy);
+    setAuthState('app');
+    if(refBonus) setTimeout(()=>push('🎁 Referral bonus! +50 AHT credited!',true),800);
+  };
+
+  if(authState==='loading')return(
+    <div className="min-h-screen flex items-center justify-center relative z-10">
+      <ParticleBG/>
+      <div className="text-center relative z-10">
+        <div className="text-7xl mb-5 select-none" style={{animation:'float 2s ease-in-out infinite'}}>⛏️</div>
+        <div className="w-10 h-10 border-2 border-aht-500 border-t-transparent rounded-full mx-auto" style={{animation:'spin 0.8s linear infinite'}}/>
+        <p className="text-slate-500 mt-4 text-sm">{tgUser?`Welcome, ${tgUser.first_name||'Miner'}! Loading...`:'Loading AHT Mining...'}</p>
+      </div>
+    </div>
+  );
+
+  if(authState==='auth')return(
+    <>
+      <ParticleBG/>
+      <AuthPage onAuth={onAuth}/>
+      <ToastLayer toasts={toasts}/>
+    </>
+  );
+
+  const navItems=[
+    {id:'home',ic:'⛏️',lb:'Mine'},
+    {id:'leaderboard',ic:'🏆',lb:'Ranks'},
+    {id:'airdrop',ic:'🚀',lb:'Airdrop'},
+    {id:'profile',ic:'👤',lb:'Profile'},
+  ];
+
+  return(
+    <>
+      <ParticleBG/>
+      <div className="relative z-10 min-h-screen flex flex-col" style={{maxWidth:'500px',margin:'0 auto'}}>
+        {/* Topbar */}
+        <div className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 border-b border-white/5" style={{background:'rgba(3,7,18,0.92)',backdropFilter:'blur(20px)'}}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl select-none">⛏️</span>
+            <span className="font-black text-white text-lg">AHT Mining</span>
+            <span className="badge-net">TESTNET</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {userData&&(
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-aht-500/30" style={{background:'rgba(217,70,239,0.08)'}}>
+                <span className="text-xs font-black text-aht-300">{fmt(userData.ahtBalance||0)}</span>
+                <span className="text-xs text-slate-500">AHT</span>
+              </div>
+            )}
+            {/* Telegram এ logout button দেখাব না */}
+            {!tgUser&&(
+              <button onClick={()=>auth.signOut()} title="Logout" className="text-slate-600 hover:text-red-400 transition-colors w-8 h-8 flex items-center justify-center rounded-xl hover:bg-white/5 text-sm">🚪</button>
+            )}
+            {tgUser&&userData?.tgPhotoUrl&&(
+              <img src={userData.tgPhotoUrl} className="w-8 h-8 rounded-full border border-aht-500/40" alt=""/>
+            )}
+            {tgUser&&!userData?.tgPhotoUrl&&(
+              <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-black text-white border border-aht-500/40"
+                style={{background:'linear-gradient(135deg,#701a75,#d946ef)'}}>
+                {(userData?.displayName||tgUser.first_name||'M')[0].toUpperCase()}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto px-4 py-5" style={{paddingBottom:'88px',scrollbarWidth:'thin'}}>
+          {page==='home'&&<HomePage userData={userData} user={user} refererUid={refererUid} onRefresh={loadUser} push={push}/>}
+          {page==='leaderboard'&&<LeaderboardPage userData={userData}/>}
+          {page==='airdrop'&&<AirdropPage userData={userData}/>}
+          {page==='profile'&&<ProfilePage userData={userData} user={user} push={push}/>}
+        </div>
+
+        {/* Bottom Nav */}
+        <div className="fixed bottom-0 z-30 px-3 pb-3" style={{left:'50%',transform:'translateX(-50%)',width:'100%',maxWidth:'500px'}}>
+          <div className="glass rounded-2xl border border-white/10 p-1.5 flex gap-1" style={{background:'rgba(3,7,18,0.96)',backdropFilter:'blur(20px)'}}>
+            {navItems.map(n=>(
+              <button key={n.id} onClick={()=>setPage(n.id)}
+                className={`nav-btn ${page===n.id?'active':''}`}>
+                <span className="text-xl">{n.ic}</span>
+                <span className={`text-xs font-semibold ${page===n.id?'text-aht-300':'text-slate-600'}`}>{n.lb}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <ToastLayer toasts={toasts}/>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
